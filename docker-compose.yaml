@@ -1,0 +1,62 @@
+# nginx proxy address - http://172.17.0.1:8083
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "5m"
+    max-file: "1"
+
+services:
+  lychee:
+    image: lycheeorg/lychee:latest
+    container_name: lychee-app
+    restart: unless-stopped
+    logging: *default-logging
+    networks:
+      - lychee
+    ports:
+      - "8083:80"
+    environment:
+      TZ: ${TZ:-America/New_York}
+      DB_CONNECTION: mysql
+      DB_HOST: lychee-db
+      DB_PORT: "3306"
+      DB_DATABASE: ${DB_CREATE_DATABASE_NAME:-lychee}
+      DB_USERNAME: ${DB_USER_NAME:-lychee}
+      DB_PASSWORD: ${DB_USER_PASS:-changeme_db_password}
+      STARTUP_DELAY: "30"
+    volumes:
+      - ./rootfs/data/lychee:/uploads
+      - ./rootfs/config/lychee:/conf
+    depends_on:
+      - lychee-db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  lychee-db:
+    image: mariadb:11
+    container_name: lychee-db
+    restart: unless-stopped
+    logging: *default-logging
+    networks:
+      - lychee
+    environment:
+      TZ: ${TZ:-America/New_York}
+      MARIADB_DATABASE: ${DB_CREATE_DATABASE_NAME:-lychee}
+      MARIADB_USER: ${DB_USER_NAME:-lychee}
+      MARIADB_PASSWORD: ${DB_USER_PASS:-changeme_db_password}
+      MARIADB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_root_password}
+    volumes:
+      - ./rootfs/db/mariadb/lychee:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  lychee:
+    external: false
