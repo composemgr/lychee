@@ -1,12 +1,25 @@
-# Lychee
+## 👋 Welcome to lychee 🚀
 
-A self-hosted application for managing lychee.
+Self-hosted photo management and sharing
 
-## Installation
+## 📋 Description
+
+Self-hosted photo management and sharing
+
+## 🚀 Services
+
+- **lychee**: lycheeorg/lychee:latest
+
+### Infrastructure Components
+
+- **lychee-db**: Mariadb database
+
+
+## 📦 Installation
 
 ### Option 1: Quick Install
 ```bash
-curl -q -LSsf "https://raw.githubusercontent.com/composemgr/lychee/main/docker-compose.yaml" | docker compose -f - up -d
+curl -q -LSsf "https://raw.githubusercontent.com/composemgr/lychee/main/docker-compose.yaml" -o compose.yml
 ```
 
 ### Option 2: Git Clone
@@ -21,10 +34,68 @@ docker compose up -d
 composemgr install lychee
 ```
 
-## Configuration
+## 🔧 Configuration
 
-See docker-compose.yaml for environment variables and configuration options.
+### Environment Variables
 
-## Documentation
+```shell
+TZ=America/New_York
+DB_CREATE_DATABASE_NAME=lychee
+DB_USER_NAME=lychee
+DB_USER_PASS=changeme_db_password
+```
 
-Check the official project documentation for detailed setup and usage information.
+See `docker-compose.yaml` for complete list of configurable options.
+
+## 🌐 Access
+
+- **Web Interface**: http://172.17.0.1:8083
+
+## 📂 Volumes
+
+- `./rootfs/data/lychee` - Data storage
+- `./rootfs/config/lychee` - Data storage
+- `./rootfs/data/db/mariadb/lychee` - Data storage
+
+## 🔐 Security
+
+- Change all default passwords before deploying to production
+- Use strong secrets for all authentication tokens
+- Configure HTTPS using a reverse proxy (nginx, traefik, caddy)
+- Regularly update Docker images for security patches
+- Backup your data regularly
+
+## 🔍 Logging
+
+```shell
+docker compose logs -f lychee
+```
+
+## 🛠️ Management
+
+```bash
+# Start services
+docker compose up -d
+
+# Stop services
+docker compose down
+
+# Update to latest images
+docker compose pull && docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Restart services
+docker compose restart
+```
+
+## 📋 Requirements
+
+- Docker Engine 20.10+
+- Docker Compose V2+
+
+## 🤝 Author
+
+🤖 casjay: [Github](https://github.com/casjay) 🤖  
+🦄 composemgr: [Github](https://github.com/composemgr) 🦄
