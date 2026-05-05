@@ -53,9 +53,9 @@ See `docker-compose.yaml` for complete list of configurable options.
 
 ## 📂 Volumes
 
-- `./rootfs/data/lychee` - Data storage
-- `./rootfs/config/lychee` - Data storage
-- `./rootfs/data/db/mariadb/lychee` - Data storage
+- `./volumes/data/lychee` - Data storage
+- `./volumes/config/lychee` - Data storage
+- `./volumes/data/db/mariadb/lychee` - Data storage
 
 ## 🔐 Security
 
