@@ -16,10 +16,14 @@ services:
     logging: *default-logging
     networks:
       - lychee
+      - proxy
+      - cloudflare
     ports:
       - "172.17.0.1:8083:80"
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: lychee-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
       APP_URL: https://${BASE_HOST_NAME:-$HOSTNAME}
       APP_KEY: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
       DB_CONNECTION: mysql
@@ -32,8 +36,8 @@ services:
       MAIL_DRIVER: smtp
       MAIL_HOST: ${EMAIL_SERVER_HOST:-172.17.0.1}
       MAIL_PORT: ${EMAIL_SERVER_PORT:-587}
-      MAIL_USERNAME: ${EMAIL_SERVER_USER:-}
-      MAIL_PASSWORD: ${EMAIL_SERVER_PASS:-}
+      MAIL_USERNAME: ${EMAIL_SERVER_LOGIN_NAME:-}
+      MAIL_PASSWORD: ${EMAIL_SERVER_LOGIN_PASS:-}
       MAIL_FROM_ADDRESS: ${EMAIL_SERVER_MAIL_FROM:-no-reply@example.com}
     volumes:
       - ./volumes/data/lychee/uploads:/uploads
@@ -47,6 +51,22 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://lychee-app:80'
+      - 'cloudflare.hostname=lychee.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.lychee-app.entrypoints=http'
+      - 'traefik.http.routers.lychee-app-secure.tls=true'
+      - 'traefik.http.routers.lychee-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.lychee-app-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.lychee-app.middlewares=lychee-app-https-redirect'
+      - 'traefik.http.routers.lychee-app-secure.entrypoints=https'
+      - 'traefik.http.routers.lychee-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.lychee-app-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.lychee-app-secure.service=lychee-app'
+      - 'traefik.http.services.lychee-app.loadbalancer.server.port=80'
 
   lychee-db:
     image: mariadb:latest
@@ -58,6 +78,7 @@ services:
       - lychee
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: lychee-db
       MARIADB_DATABASE: ${DB_CREATE_DATABASE_NAME:-lychee}
       MARIADB_USER: ${DB_USER_NAME:-lychee}
       MARIADB_PASSWORD: ${DB_USER_PASS:-changeme_db_password}
@@ -74,3 +95,7 @@ networks:
   lychee:
     name: lychee
     external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
