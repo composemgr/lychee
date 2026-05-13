@@ -1,5 +1,6 @@
 # nginx proxy address - http://172.17.0.1:8083
 
+name: lychee
 x-logging: &default-logging
   driver: json-file
   options:
@@ -9,15 +10,18 @@ x-logging: &default-logging
 services:
   lychee:
     image: lycheeorg/lychee:latest
+    pull_policy: always
     container_name: lychee-app
-    restart: unless-stopped
+    restart: always
     logging: *default-logging
     networks:
       - lychee
     ports:
-      - "8083:80"
+      - "172.17.0.1:8083:80"
     environment:
       TZ: ${TZ:-America/New_York}
+      APP_URL: https://${BASE_HOST_NAME:-$HOSTNAME}
+      APP_KEY: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
       DB_CONNECTION: mysql
       DB_HOST: lychee-db
       DB_PORT: "3306"
@@ -25,11 +29,19 @@ services:
       DB_USERNAME: ${DB_USER_NAME:-lychee}
       DB_PASSWORD: ${DB_USER_PASS:-changeme_db_password}
       STARTUP_DELAY: "30"
+      MAIL_DRIVER: smtp
+      MAIL_HOST: ${EMAIL_SERVER_HOST:-172.17.0.1}
+      MAIL_PORT: ${EMAIL_SERVER_PORT:-587}
+      MAIL_USERNAME: ${EMAIL_SERVER_USER:-}
+      MAIL_PASSWORD: ${EMAIL_SERVER_PASS:-}
+      MAIL_FROM_ADDRESS: ${EMAIL_SERVER_MAIL_FROM:-no-reply@example.com}
     volumes:
-      - ./volumes/data/lychee:/uploads
+      - ./volumes/data/lychee/uploads:/uploads
+      - ./volumes/data/lychee/sym:/sym
       - ./volumes/config/lychee:/conf
     depends_on:
-      - lychee-db
+      lychee-db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80"]
       interval: 30s
@@ -37,9 +49,10 @@ services:
       retries: 3
 
   lychee-db:
-    image: mariadb:11
+    image: mariadb:latest
+    pull_policy: always
     container_name: lychee-db
-    restart: unless-stopped
+    restart: always
     logging: *default-logging
     networks:
       - lychee
@@ -48,7 +61,7 @@ services:
       MARIADB_DATABASE: ${DB_CREATE_DATABASE_NAME:-lychee}
       MARIADB_USER: ${DB_USER_NAME:-lychee}
       MARIADB_PASSWORD: ${DB_USER_PASS:-changeme_db_password}
-      MARIADB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_root_password}
+      MARIADB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_admin_password}
     volumes:
       - ./volumes/data/db/mariadb/lychee:/var/lib/mysql
     healthcheck:
@@ -59,4 +72,5 @@ services:
 
 networks:
   lychee:
+    name: lychee
     external: false
